@@ -48,7 +48,7 @@ else:
             # Adjust field numbers as per your ThingSpeak channel
             temperature = float(feed['field1'])
             humidity = float(feed['field2'])
-            ph = float(feed['field3'])
+            ph = float(feed['field5'])
             rainfall = float(feed['field4'])
 
             st.success(f"✅ Fetched Data:\n\nTemperature = {temperature} °C\nHumidity = {humidity} %\n"
