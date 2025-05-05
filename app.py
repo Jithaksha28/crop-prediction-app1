@@ -17,26 +17,15 @@ crop_dict = {
 }
 reverse_crop_dict = {v: k for k, v in crop_dict.items()}
 
-# -------------------- Helper functions --------------------
-def is_ideal_for_cotton(temp, humidity, ph, rainfall):
-    return (
-        21 <= temp <= 30 and
-        50 <= humidity <= 80 and
-        6.0 <= ph <= 7.5 and
-        600 <= rainfall <= 1200
-    )
-
-def predict_crop_and_cotton_prob(model, scaler, temperature, humidity, ph, rainfall):
+# -------------------- Prediction Function --------------------
+def predict_crop(model, scaler, temperature, humidity, ph, rainfall):
     features = np.array([[temperature, humidity, ph, rainfall]])
     scaled = scaler.transform(features)
-    probs = model.predict_proba(scaled)[0]
     predicted_label = model.predict(scaled)[0]
-
     predicted_crop = reverse_crop_dict.get(predicted_label, "Unknown")
-    cotton_prob = round(probs[3] * 100, 2)  # cotton = label 4 => index 3
+    return predicted_crop
 
-    return predicted_crop, cotton_prob
-
+# -------------------- ThingSpeak Fetch --------------------
 def get_latest_thingspeak_data(channel_id, read_api_key):
     url = f"https://api.thingspeak.com/channels/{channel_id}/feeds.json?results=1&api_key={read_api_key}"
     try:
@@ -52,19 +41,19 @@ def get_latest_thingspeak_data(channel_id, read_api_key):
         return None
 
 # -------------------- Streamlit UI --------------------
-st.set_page_config(page_title="Crop Prediction & Cotton Suitability", layout="centered")
-st.title("🌾 Crop Prediction App with Cotton Suitability Check")
+st.set_page_config(page_title="Crop Prediction", layout="centered")
+st.title("🌾 Crop Prediction App")
 
-st.write("Enter the environmental conditions or fetch from ThingSpeak to predict the best crop and check cotton suitability.")
+st.write("Enter the environmental conditions or fetch from ThingSpeak to predict the most suitable crop.")
 
 # Input fields
 col1, col2 = st.columns(2)
 with col1:
-    temperature = st.number_input("🌡️ Temperature (°C)", min_value=0.0, max_value=50.0, step=0.1, format="%.2f")
-    ph = st.number_input("🧪 Soil pH", min_value=0.0, max_value=14.0, step=0.01, format="%.2f")
+    temperature = st.number_input("🌡️ Temperature (°C)", step=0.1, format="%.2f")
+    ph = st.number_input("🧪 Soil pH", step=0.01, format="%.2f")
 with col2:
-    humidity = st.number_input("💧 Humidity (%)", min_value=0.0, max_value=100.0, step=0.1, format="%.2f")
-    rainfall = st.number_input("🌧️ Rainfall (mm)", min_value=0.0, max_value=1200.0, step=0.1, format="%.2f")
+    humidity = st.number_input("💧 Humidity (%)", step=0.1, format="%.2f")
+    rainfall = st.number_input("🌧️ Rainfall (mm)", step=0.1, format="%.2f")
 
 # ThingSpeak Integration
 st.markdown("---")
@@ -72,15 +61,15 @@ if st.button("🔄 Fetch from ThingSpeak"):
     channel_id = 2922258
     read_api_key = "2YNU92QLNQCX3CI0"
     feed = get_latest_thingspeak_data(channel_id, read_api_key)
-    
+
     if feed:
         try:
             temperature = float(feed.get('field1', 0))
             humidity = float(feed.get('field2', 0))
-            ph = float(feed.get('field5', 0))
+            ph = float(feed.get('field3', 0))
             rainfall = float(feed.get('field4', 0))
 
-            st.success("✅ Fetched Data from ThingSpeak:")
+            st.success("✅ Fetched Data:")
             st.write(f"Temperature = {temperature} °C")
             st.write(f"Humidity = {humidity} %")
             st.write(f"pH = {ph}")
@@ -97,19 +86,11 @@ if st.button("🚀 Predict Crop"):
         if None in [temperature, humidity, ph, rainfall]:
             st.error("❌ Please input all values or fetch data before predicting.")
         else:
-            predicted_crop, cotton_prob = predict_crop_and_cotton_prob(
+            predicted_crop = predict_crop(
                 model, scaler, temperature, humidity, ph, rainfall
             )
 
             st.subheader(f"🌾 Predicted Crop: **{predicted_crop.capitalize()}**")
-            st.write(f"📊 Cotton Suitability Probability: **{cotton_prob}%**")
-
-            if is_ideal_for_cotton(temperature, humidity, ph, rainfall):
-                st.success("✅ Conditions are IDEAL for planting cotton!")
-            elif predicted_crop == "cotton":
-                st.warning("⚠️ Conditions are not ideal, but model still suggests cotton.")
-            else:
-                st.info(f"❌ Not suitable for cotton. Better for: **{predicted_crop}**")
 
     except Exception as e:
         st.error(f"❌ Prediction Error: {e}")
