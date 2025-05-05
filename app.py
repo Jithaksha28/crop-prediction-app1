@@ -84,7 +84,7 @@ if st.button("🔄 Fetch from ThingSpeak"):
         try:
             temperature = float(feed.get('field1', 0))
             humidity = float(feed.get('field2', 0))
-            ph = float(feed.get('field3', 0))
+            ph = float(feed.get('field5', 0))
             rainfall = float(feed.get('field4', 0))
 
             st.success("✅ Fetched Data:")
