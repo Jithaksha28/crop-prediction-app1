@@ -5,8 +5,8 @@ import requests
 import random
 
 # -------------------- Load model and scaler --------------------
-model = joblib.load("cotton_crop_model (2).pkl")
-scaler = joblib.load("minmax_scaler (1).pkl")
+model = joblib.load("c.pkl")
+scaler = joblib.load("m.pkl")
 
 # -------------------- Crop dictionary --------------------
 crop_dict = {
