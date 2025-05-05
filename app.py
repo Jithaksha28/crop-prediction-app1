@@ -71,7 +71,7 @@ with col1:
     ph = st.number_input("🧪 Soil pH", step=0.01, format="%.2f")
 with col2:
     humidity = st.number_input("💧 Humidity (%)", step=0.1, format="%.2f")
-    rainfall = st.number_input("🌧️ Rainfall (mm)", step=0.1, format="%.2f")
+    rainfall = st.number_input("🌧️ Rainfall ", step=0.1, format="%.2f")
 
 # ThingSpeak Integration
 st.markdown("---")
