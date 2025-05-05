@@ -18,25 +18,29 @@ crop_dict = {
 }
 reverse_crop_dict = {v: k for k, v in crop_dict.items()}
 
+# -------------------- Cotton suitability check --------------------
+def is_ideal_for_cotton(temp, humidity, ph, rainfall):
+    return (
+        21 <= temp <= 30 and
+        50 <= humidity <= 80 and
+        6.0 <= ph <= 7.5 and
+        600 <= rainfall <= 1200
+    )
+
 # -------------------- Prediction Function --------------------
 def predict_crop(model, scaler, temperature, humidity, ph, rainfall):
     features = np.array([[temperature, humidity, ph, rainfall]])
     scaled = scaler.transform(features)
-    
-    # Predict labels and probabilities
-    predicted_labels = model.predict(scaled)
-    predicted_probabilities = model.predict_proba(scaled)
-    
-    # Rank crops based on probabilities
-    crop_probabilities = list(zip(predicted_labels, predicted_probabilities[0]))
-    sorted_crops = sorted(crop_probabilities, key=lambda x: x[1], reverse=True)
-    
-    # Add randomness: Select 2-3 top crops with some randomness in the top crops based on their probabilities
-    top_crops = [reverse_crop_dict.get(label, "Unknown") for label, _ in sorted_crops[:3]]
-    
-    # Return the randomly selected crops
-    selected_crop = random.choice(top_crops)
-    
+
+    # Predict probabilities
+    predicted_probabilities = model.predict_proba(scaled)[0]
+    label_indices = np.argsort(predicted_probabilities)[::-1]  # descending order
+
+    # Pick top 3 crops with some randomness
+    top_labels = label_indices[:5]  # increase pool for better variety
+    selected_label = random.choice(top_labels[:3])  # randomly pick from top 3
+
+    selected_crop = reverse_crop_dict.get(selected_label + 1, "Unknown")  # label starts from 0
     return selected_crop
 
 # -------------------- ThingSpeak Fetch --------------------
@@ -105,6 +109,12 @@ if st.button("🚀 Predict Crop"):
             )
 
             st.subheader(f"🌾 Predicted Crop: **{predicted_crop.capitalize()}**")
+
+            # Check cotton suitability
+            if is_ideal_for_cotton(temperature, humidity, ph, rainfall):
+                st.info("✅  conditions are **SUITABLE for cotton**.")
+            else:
+                st.warning("⚠️  conditions are **NOT ideal for cotton**.")
 
     except Exception as e:
         st.error(f"❌ Prediction Error: {e}")
