@@ -2,10 +2,11 @@ import streamlit as st
 import numpy as np
 import joblib
 import requests
+import random
 
 # -------------------- Load model and scaler --------------------
-model = joblib.load("cotton_crop_model.pkl")
-scaler = joblib.load("scaler.pkl")
+model = joblib.load("cotton_crop_model (2).pkl")
+scaler = joblib.load("minmax_scaler (1).pkl")
 
 # -------------------- Crop dictionary --------------------
 crop_dict = {
@@ -21,9 +22,22 @@ reverse_crop_dict = {v: k for k, v in crop_dict.items()}
 def predict_crop(model, scaler, temperature, humidity, ph, rainfall):
     features = np.array([[temperature, humidity, ph, rainfall]])
     scaled = scaler.transform(features)
-    predicted_label = model.predict(scaled)[0]
-    predicted_crop = reverse_crop_dict.get(predicted_label, "Unknown")
-    return predicted_crop
+    
+    # Predict labels and probabilities
+    predicted_labels = model.predict(scaled)
+    predicted_probabilities = model.predict_proba(scaled)
+    
+    # Rank crops based on probabilities
+    crop_probabilities = list(zip(predicted_labels, predicted_probabilities[0]))
+    sorted_crops = sorted(crop_probabilities, key=lambda x: x[1], reverse=True)
+    
+    # Add randomness: Select 2-3 top crops with some randomness in the top crops based on their probabilities
+    top_crops = [reverse_crop_dict.get(label, "Unknown") for label, _ in sorted_crops[:3]]
+    
+    # Return the randomly selected crops
+    selected_crop = random.choice(top_crops)
+    
+    return selected_crop
 
 # -------------------- ThingSpeak Fetch --------------------
 def get_latest_thingspeak_data(channel_id, read_api_key):
