@@ -91,7 +91,7 @@ if st.button("🔄 Fetch from ThingSpeak"):
             st.write(f"Temperature = {temperature} °C")
             st.write(f"Humidity = {humidity} %")
             st.write(f"pH = {ph}")
-            st.write(f"Rainfall = {rainfall} mm")
+            st.write(f"Rainfall = {rainfall} ")
         except:
             st.error("❌ Error parsing ThingSpeak data.")
     else:
